@@ -10,11 +10,19 @@ Ref. https://langchain-ai.github.io/langgraph/tutorials/
 
 Prepare `.env` file:
 
-```text
+```env
+# 3rd-party frameworks
 OPENAI_API_KEY=
 TAVILY_API_KEY=tvly-dev-xdfFV...IYgM2
 LOGFIRE_API_KEY=pylf_v1_us_z79J9...VN7Rz
 LANGCHAIN_API_KEY=
+
+# bedrock
+AWS_BEDROCK_REGION=
+AWS_BEDROCK_ACCESS_KEY=
+AWS_BEDROCK_SECRET_KEY=
+
+# feature flags
 ENABLE_FEATURE_TAVILY=0
 ENABLE_FEATURE_HUMAN_ASSISTANCE=0
 ENABLE_FEATURE_MATH=0
