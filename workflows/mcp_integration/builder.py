@@ -14,9 +14,5 @@ async def make_graph():
         builder.add_edge('agent_with_mcp', END)
 
         graph = builder.compile()
-        # img_data = graph.get_graph().draw_mermaid_png()
-        # with open('./output/graph-mcp-integration.png', 'wb') as f:
-        #     f.write(img_data)
-        #     print("Graph image saved successfully!")
-
+        
         yield graph
