@@ -175,3 +175,10 @@ cython_debug/
 
 # uv
 uv.lock
+
+# env
+.env*
+!.env.example
+
+# macos
+.DS_Store
