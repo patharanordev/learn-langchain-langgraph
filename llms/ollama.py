@@ -5,13 +5,10 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from pydantic import BaseModel
 from enum import Enum
 
+from models.chain_response_type import ChainResponseType
+
 T = TypeVar('T', bound=BaseModel)
 DEFAULT_OLLAMA_MODEL = 'llama3.2:latest'
-
-class ChainResponseType(Enum):
-    DEFAULT = 1
-    STRING = 2
-    JSON = 3
 
 class OllamaChain:
     '''
