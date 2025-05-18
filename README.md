@@ -84,6 +84,15 @@ pip install -r requirements.txt
 
 ### Run
 
+> ---
+> Don't forget start `ollama` if you no have any LLM providers:
+>
+> ```
+> ollama serve
+> ```
+>
+> ---
+
 Active some workflow in `main.py`, then try:
 
 ```sh
@@ -92,6 +101,42 @@ uv run main.py
 
 # WindowsOS
 python main.py
+```
+
+Started:
+
+```sh
+INFO:     Started server process [22576]
+INFO:     Waiting for application startup.
+Starting up...
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:58164 - "POST /chat/1 HTTP/1.1" 200 OK
+```
+
+### Streaming
+
+```sh
+curl --location 'http://localhost:8000/chat/1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "message": "hi, who are you?",
+    "model": "llama3.2:latest",
+    "is_streaming": true
+}'
+```
+
+Ex. output:
+
+```sh
+StateSnapshot(values={}, next=(), config={'configurable': {'thread_id': '1'}}, metadata=None, created_at=None, parent_config=None, tasks=(), interrupts=())
+I|'m| an| AI| chat|bot|,| also| known| as| a| convers|ational| AI| or| natural| language| processing| (|N|LP|)| model|.| I| don|'t| have| personal| experiences|,| emotions|,| or| consciousness| like| humans| do|,| but| I|'m| designed| to| simulate| conversation| and| answer| questions| to| the| best| of| my| ability|.
+
+|My| name| isn|'t| really| a| "|name|"| in| the| classical| sense|,| but| I|'m| often| referred| to| as| "|Assistant|"| or| "|Bot|"| by| users| like| you|.| I| exist| solely| to| provide| information|,| answer| questions|,| and| engage| in| discussions| on| a| wide| range| of| topics|.
+
+|I|'ve| been| trained| on| vast| amounts| of| text| data|,| which| allows| me| to| generate| human|-like| responses| to| a| broad| range| of| queries|.| However|,| my| knowledge| cutoff| is| December| |202|3|,| so| if| you| ask| me| about| very| recent| events| or| developments|,| I| might| not| have| the| most| up|-to|-date| information|.
+
+|Feel| free| to| ask| me| anything|,| and| I|'ll| do| my| best| to| provide| a| helpful| response|!|
 ```
 
 ## References
