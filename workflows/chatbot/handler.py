@@ -1,10 +1,12 @@
-from workflows.chatbot.builder import graph
+from workflows.chatbot.builder import create_graph
+from llms.ollama import DEFAULT_OLLAMA_MODEL
 import uuid
 
 def stream_graph_updates(user_input:str, id):
     config = {'configurable': {'thread_id': id}}
     
     # check state
+    graph = create_graph(model=DEFAULT_OLLAMA_MODEL)
     snapshot = graph.get_state(config)
     snapshot.next
 

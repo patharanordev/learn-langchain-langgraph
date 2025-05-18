@@ -2,8 +2,6 @@
 
 Ref. https://langchain-ai.github.io/langgraph/tutorials/
 
-
-
 ## Prerequisites
 
 ### Environment Variables
@@ -95,3 +93,7 @@ uv run main.py
 # WindowsOS
 python main.py
 ```
+
+## References
+
+- [Streaming in LangGraph](./docs/streaming.md)
