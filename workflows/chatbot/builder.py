@@ -10,7 +10,7 @@ import os
 # load environment variables
 load_dotenv()
 
-def create_graph(model:str=DEFAULT_OLLAMA_MODEL, temperature:float=0.7, streaming:bool=False):
+async def create_graph(model:str=DEFAULT_OLLAMA_MODEL, temperature:float=0.7, streaming:bool=False):
     """
     Build the chatbot graph with the specified model and temperature.
     Args:
@@ -68,4 +68,4 @@ def create_graph(model:str=DEFAULT_OLLAMA_MODEL, temperature:float=0.7, streamin
         f.write(img_data)
         print("Graph image saved successfully!")
 
-    return graph
+    return graph, None
