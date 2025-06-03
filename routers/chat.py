@@ -1,13 +1,15 @@
-from typing import Optional
-from fastapi import APIRouter, status
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, JSONResponse
 from models.chat_request import ChatRequest
-# from workflows.chatbot.builder import create_graph
-from workflows.mcp_integration.builder import create_graph
+from models.settings_request import SettingsRequest
+from workflows.mcp_integration.agents.sqlserver_agent import SQLSeverAgent
+from workflows.mcp_integration.builder import build_graph, create_graph
 import asyncio
 
+graph_cache = {
+    # thread_id: compiled_graph
+}
 STREAM_TOKEN_BUFFER_SIZE = 5
-
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 def send_message(message: str):
@@ -31,7 +33,7 @@ def transform_message(message: any):
 async def invoke_graph(thread_id: str, request: ChatRequest):
     config = {'configurable': {'thread_id': thread_id}}
     
-    graph, mcp_client = await create_graph(model=request.model, streaming=request.is_streaming)  # or use request.model
+    graph = graph_cache[thread_id].get("graph")
     snapshot = graph.get_state(config)
     snapshot.next
     print(snapshot)
@@ -43,14 +45,10 @@ async def invoke_graph(thread_id: str, request: ChatRequest):
         config=config
     )
 
-    # close mcp if open
-    if mcp_client:
-        await mcp_client.__aexit__(None, None, None)
-
     # Extract the message content
     messages = result.get("messages", [])
     if not messages:
-        return
+        return ""
 
     message = messages[-1]
     if isinstance(message, dict):
@@ -65,7 +63,7 @@ async def invoke_graph(thread_id: str, request: ChatRequest):
 async def stream_graph_updates(thread_id: str, request: ChatRequest):
     config = {'configurable': {'thread_id': thread_id}}
     
-    graph, mcp_client = await create_graph(model=request.model, streaming=request.is_streaming)  # or use request.model
+    graph = graph_cache[thread_id].get("graph")
     snapshot = graph.get_state(config)
     snapshot.next
     print(snapshot)
@@ -88,20 +86,46 @@ async def stream_graph_updates(thread_id: str, request: ChatRequest):
                 yield send_message(message)
                 await asyncio.sleep(0.01)
 
-    # close mcp if open
-    if mcp_client:
-        await mcp_client.__aexit__(None, None, None)
-
     if len(buffer) > 0:
         message = "".join(buffer).strip()
         buffer.clear()
         yield send_message(message)
         await asyncio.sleep(0.01)
 
+@router.post("/setting/{thread_id}")
+async def update_setting(request: SettingsRequest, thread_id:str):
+    try:
+        agent = SQLSeverAgent()
+        agent.save_graph_path = request.save_graph_path
+        agent.set_chain(request.model_name, request.temperature, request.is_streaming)
+        graph = await agent.create_graph()
+        graph_cache[thread_id] = {
+            "settings": request,
+            "graph": build_graph(graph),
+        }
+
+        return JSONResponse(
+            content={ "data": "updated", "error": None },
+            status_code=200
+        )
+    except Exception as e:
+        return JSONResponse(
+            content={ "data": None, "error": str(e) },
+            status_code=400
+        )
 
 @router.post("/{thread_id}")
 async def chat(request: ChatRequest, thread_id:str):
-    if request.is_streaming:
+    
+    if thread_id not in graph_cache.keys():
+        return JSONResponse(
+            content={ "data": None, "error": "Please set your model first." },
+            status_code=400
+        )
+
+    # check setting of user's graph
+    setting: SettingsRequest = graph_cache[thread_id].get("settings")
+    if setting.is_streaming:
         return StreamingResponse(
             stream_graph_updates(thread_id, request),
             media_type="text/event-stream"

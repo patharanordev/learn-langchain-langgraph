@@ -3,8 +3,14 @@ from langgraph.prebuilt import create_react_agent
 from llms.bedrock import BedrockChain, DEFAULT_BEDROCK_MODEL
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-async def make_agent_with_mcp(model:str=DEFAULT_BEDROCK_MODEL, temperature:float=0.7, streaming:bool=False):
-    
+@asynccontextmanager
+async def make_agent_with_mcp(
+    model: str = DEFAULT_BEDROCK_MODEL,
+    temperature: float = 0.7,
+    streaming: bool = False,
+    save_graph_path: str = "",  # Optional dev debug
+):
+    # Set up the LLM chain
     chain = BedrockChain(model=model, temperature=temperature, streaming=streaming)
     chain.system_prompt = """
 You are an expert in SQL Server with deep knowledge of query analysis and performance optimization. 
@@ -14,26 +20,24 @@ You troubleshoot and resolve performance issues, including bottlenecks, deadlock
 You also support database migrations between SQL Server versions or from other database platforms.
     """
 
-    model = chain.model
+    # Extract model from chain
+    llm_model = chain.model
 
-    mcp_client = MultiServerMCPClient(
-        {
-            'sqlserver': {
-                'url': 'http://localhost:4200/sse',
-                'transport': 'sse'
-            },
+    # Use MCP client safely
+    async with MultiServerMCPClient({
+        'sqlserver': {
+            'url': 'http://localhost:4200/sse',
+            'transport': 'sse'
         }
-    )
+    }) as mcp_client:
 
-    # manual connect to mcp(s)
-    await mcp_client.__aenter__()
+        # Create agent with tools from MCP
+        graph = create_react_agent(llm_model, mcp_client.get_tools())
 
-    graph = create_react_agent(model, mcp_client.get_tools())
+        # Optional: save Mermaid diagram
+        if save_graph_path:
+            img_data = graph.get_graph().draw_mermaid_png()
+            with open(save_graph_path, 'wb') as f:
+                f.write(img_data)
 
-    img_data = graph.get_graph().draw_mermaid_png()
-    with open('./output/graph-mcp-integration-inside.png', 'wb') as f:
-        f.write(img_data)
-        print("Graph image saved successfully!")
-
-    # allow to close mcp(s) later
-    return graph, mcp_client
+        yield graph

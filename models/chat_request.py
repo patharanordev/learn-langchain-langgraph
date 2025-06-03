@@ -5,9 +5,6 @@ class ChatRequest(BaseModel):
     Represents a request to the OpenAI Chat API.
     """
     message: str
-    model: str = "gpt-3.5-turbo"
-    temperature: float = 0.7
-    is_streaming: bool = True
     
     @field_validator("message")
     def validate_num_tokens(cls, value):
