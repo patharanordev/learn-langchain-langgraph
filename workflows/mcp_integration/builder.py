@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 from langgraph.graph import StateGraph, START, END
+from models.settings_request import SettingsRequest
+from workflows.mcp_integration.agents.sqlserver_agent import SQLSeverAgent
 from workflows.mcp_integration.models.state import State
 from workflows.mcp_integration.agents.agent_with_mcp.builder import make_agent_with_mcp
 from llms.ollama import OllamaChain, DEFAULT_OLLAMA_MODEL
@@ -9,17 +11,16 @@ from dotenv import load_dotenv
 # load environment variables
 load_dotenv()
 
-@asynccontextmanager
-async def create_graph(model:str=DEFAULT_OLLAMA_MODEL, temperature:float=0.7, streaming:bool=False):
-    async with make_agent_with_mcp(
-        model=model, 
-        temperature=temperature, 
-        streaming=streaming,
-        save_graph_path="./output/graph-integrate-with-mcp.png"
-    ) as graph:
+async def build_graph(request: SettingsRequest):
+    try:
+        agent = SQLSeverAgent()
+        agent.save_graph_path = request.save_graph_path
+        agent.set_chain(request.model_name, request.temperature, request.is_streaming)
+        agent_graph = await agent.create_graph()
+    
         builder = StateGraph(State)
-        builder.add_node('agent_with_mcp', graph)
-
+        builder.add_node('agent_with_mcp', agent_graph)
+        
         builder.add_edge(START, 'agent_with_mcp')
         builder.add_edge('agent_with_mcp', END)
 
@@ -27,24 +28,8 @@ async def create_graph(model:str=DEFAULT_OLLAMA_MODEL, temperature:float=0.7, st
         memory = InMemorySaver()
         
         graph = builder.compile(checkpointer=memory)
-        # img_data = graph.get_graph().draw_mermaid_png()
-        # with open('./output/graph-integrate-with-mcp.png', 'wb') as f:
-        #     f.write(img_data)
-        #     print("Graph image saved successfully!")
 
-        yield graph
-
-def build_graph(agent):
-    builder = StateGraph(State)
-    builder.add_node('agent_with_mcp', agent)
-
-    builder.add_edge(START, 'agent_with_mcp')
-    builder.add_edge('agent_with_mcp', END)
-
-    # To support specific thread for get state from graph
-    memory = InMemorySaver()
-    
-    graph = builder.compile(checkpointer=memory)
-
-    return graph
-
+        return graph
+    except Exception as e:
+        print(f'In build graph error: {str(e)}')
+        raise e

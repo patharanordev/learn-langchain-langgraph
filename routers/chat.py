@@ -2,8 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, JSONResponse
 from models.chat_request import ChatRequest
 from models.settings_request import SettingsRequest
-from workflows.mcp_integration.agents.sqlserver_agent import SQLSeverAgent
-from workflows.mcp_integration.builder import build_graph, create_graph
+from workflows.mcp_integration.builder import build_graph
 import asyncio
 
 graph_cache = {
@@ -95,13 +94,10 @@ async def stream_graph_updates(thread_id: str, request: ChatRequest):
 @router.post("/setting/{thread_id}")
 async def update_setting(request: SettingsRequest, thread_id:str):
     try:
-        agent = SQLSeverAgent()
-        agent.save_graph_path = request.save_graph_path
-        agent.set_chain(request.model_name, request.temperature, request.is_streaming)
-        graph = await agent.create_graph()
+        graph = await build_graph(request)
         graph_cache[thread_id] = {
             "settings": request,
-            "graph": build_graph(graph),
+            "graph": graph,
         }
 
         return JSONResponse(
@@ -118,6 +114,7 @@ async def update_setting(request: SettingsRequest, thread_id:str):
 async def chat(request: ChatRequest, thread_id:str):
     
     if thread_id not in graph_cache.keys():
+        # TODO: Set to default setting
         return JSONResponse(
             content={ "data": None, "error": "Please set your model first." },
             status_code=400
