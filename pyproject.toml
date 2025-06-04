@@ -25,6 +25,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "tavily-python>=0.5.1",
     "tiktoken>=0.9.0",
+    "transformers>=4.51.3",
 ]
 
 [dependency-groups]

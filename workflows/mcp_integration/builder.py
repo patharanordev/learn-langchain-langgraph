@@ -1,22 +1,38 @@
-from contextlib import asynccontextmanager
 from langgraph.graph import StateGraph, START, END
+from llms.llm import LLM
+from models.llm_settings import LLMSettings
 from models.settings_request import SettingsRequest
 from workflows.mcp_integration.agents.sqlserver_agent import SQLSeverAgent
 from workflows.mcp_integration.models.state import State
-from workflows.mcp_integration.agents.agent_with_mcp.builder import make_agent_with_mcp
-from llms.ollama import OllamaChain, DEFAULT_OLLAMA_MODEL
 from langgraph.checkpoint.memory import InMemorySaver
 from dotenv import load_dotenv
+import traceback
 
 # load environment variables
 load_dotenv()
 
 async def build_graph(request: SettingsRequest):
     try:
+        
+        llm_settings = LLMSettings()
+        llm_settings.model_name = request.model_name
+        llm_settings.temperature = request.temperature
+        llm_settings.streaming = request.is_streaming
+        
+        llm = LLM()
+        chain = llm.create_chain(llm_settings)
+        chain.system_prompt = """
+    You are an expert in SQL Server with deep knowledge of query analysis and performance optimization. 
+    You assist in designing and implementing efficient, normalized database schemas that ensure data integrity. 
+    You provide guidance on SQL Server features such as indexing, partitioning, and replication. 
+    You troubleshoot and resolve performance issues, including bottlenecks, deadlocks, and connectivity errors. 
+    You also support database migrations between SQL Server versions or from other database platforms.
+        """
+        
         agent = SQLSeverAgent()
         agent.save_graph_path = request.save_graph_path
-        agent.set_chain(request.model_name, request.temperature, request.is_streaming)
-        agent_graph = await agent.create_graph()
+        # agent.set_chain(request.model_name, request.temperature, request.is_streaming)
+        agent_graph = await agent.create_graph(chain.model)
     
         builder = StateGraph(State)
         builder.add_node('agent_with_mcp', agent_graph)
@@ -31,5 +47,5 @@ async def build_graph(request: SettingsRequest):
 
         return graph
     except Exception as e:
-        print(f'In build graph error: {str(e)}')
+        print(f'In build graph error: {traceback.format_exc()}')
         raise e
