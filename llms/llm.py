@@ -1,7 +1,9 @@
 from typing import Union
-from llms.llm_provider import LLMProvider, LLMProviderName
+from llms.llm_provider import LLMProvider
+from models.llm_provider_name import LLMProviderName
 from llms.providers.ollama import OllamaChain
 from llms.providers.bedrock import BedrockChain
+from llms.model_names import model_names
 from models.llm_settings import LLMSettings
 
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
@@ -9,11 +11,6 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from models.chain_response_type import ChainResponseType
 
 class LLM:
-    model_names = [
-        'ollama:llama3.2',
-        'bedrock:claude-3-sonnet'
-    ]
-
     def create_chain(self, settings:LLMSettings) -> LLMProvider:
         provider = self._get_provider_by_model_name(settings.model_name)
         if provider is None:
@@ -51,7 +48,7 @@ class LLM:
         is_exists = False
         provider = None
         target_model_name = target_model_name.split(':')[0]
-        for model in self.model_names:
+        for model in model_names:
             [model_provider, model_name] = model.split(':')
             is_exists = model_name in target_model_name \
                or target_model_name in model_name \

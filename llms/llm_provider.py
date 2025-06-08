@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import TypeVar, Union
 from models.llm_settings import LLMSettings
 from pydantic import BaseModel
@@ -7,10 +6,6 @@ from pydantic import BaseModel
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 
 T = TypeVar('T', bound=BaseModel)
-
-class LLMProviderName(str, Enum):
-    OLLAMA = 'ollama'
-    BEDROCK = 'bedrock'
 
 class LLMProvider(ABC):
 

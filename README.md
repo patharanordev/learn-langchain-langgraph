@@ -139,6 +139,18 @@ I|'m| an| AI| chat|bot|,| also| known| as| a| convers|ational| AI| or| natural| 
 |Feel| free| to| ask| me| anything|,| and| I|'ll| do| my| best| to| provide| a| helpful| response|!|
 ```
 
+## Contributing
+
+- Add graph/workflow of your agent in `workflows` directory.
+- Add more model's attribute in `LLMSettings`.
+- Create chain (of any model) via LLM().create_chain(LLMSettings). Please refer to `workflows/mcp_integration/builder.py`.
+- Add more LLM provider and their models in :
+  - Model names of each provider - `llms/model_names.py`.
+  - LLM provider's name - `llms/llm_provider_name.py`.
+  - LLM provider - `llms/providers/{provider_name}.py` to custom function or method.
+- Create graph when user update `LLMSettings` via endpoint name `/chat/setting/{thread_id}`. The graph will be add into cache or database (currently is in-memory).
+- Graph used via endpoint name `/chat/{thread_id}`.
+
 ## References
 
 - [Streaming in LangGraph](./docs/streaming.md)
