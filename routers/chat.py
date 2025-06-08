@@ -2,7 +2,8 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, JSONResponse
 from models.chat_request import ChatRequest
 from models.settings_request import SettingsRequest
-from workflows.mcp_integration.builder import build_graph
+from workflows.mcp_integration.builder import build_graph as build_graph_mcp
+from workflows.routing.builder import build_graph as build_graph_routing
 import asyncio
 
 graph_cache = {
@@ -94,7 +95,11 @@ async def stream_graph_updates(thread_id: str, request: ChatRequest):
 @router.post("/setting/{thread_id}")
 async def update_setting(request: SettingsRequest, thread_id:str):
     try:
-        graph = await build_graph(request)
+        if request.use_agent == "routing":
+            graph = await build_graph_routing(request)
+        else:
+            graph = await build_graph_mcp(request)
+
         graph_cache[thread_id] = {
             "settings": request,
             "graph": graph,

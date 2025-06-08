@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # from workflows.chatbot.handler import start_chatbot
 # from workflows.prompt_chain.handler import start_promp_chain
 # from workflows.parallelization.handler import start_parallelization
-# from workflows.routing.handler import start_routing
 # from workflows.orchestrator_worker.handler import start_orchestrator
 # from workflows.evaluator_optimizer.handler import start_evaluator_optimizer
 # from workflows.agent.handler import start_agent
@@ -26,7 +25,6 @@ def create_app() -> FastAPI:
     # start_chatbot()
     # start_promp_chain()
     # start_parallelization()
-    # start_routing()
     # start_orchestrator()
     # start_evaluator_optimizer()
     # start_agent()

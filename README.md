@@ -2,7 +2,14 @@
 
 Ref. https://langchain-ai.github.io/langgraph/tutorials/
 
+## Patterns
+
+- [x] Routing
+- [x] MCP Integration
+
 ## Prerequisites
+
+Coming soon...
 
 ### Environment Variables
 
@@ -87,7 +94,7 @@ pip install -r requirements.txt
 > ---
 > Don't forget start `ollama` if you no have any LLM providers:
 >
-> ```
+> ```sh
 > ollama serve
 > ```
 >
@@ -116,27 +123,28 @@ INFO:     127.0.0.1:58164 - "POST /chat/1 HTTP/1.1" 200 OK
 
 ### Streaming
 
+Set setting first to config model and parameters:
+
+```sh
+curl --location 'http://localhost:8000/chat/setting/1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model_name": "llama3.2:latest",
+    "temperature": 0.7,
+    "is_streaming": true,
+    "use_agent": "routing", 
+    "save_graph_path": "./output/graph-routing.png"
+}'
+```
+
+Then let's chat:
+
 ```sh
 curl --location 'http://localhost:8000/chat/1' \
 --header 'Content-Type: application/json' \
 --data '{
-    "message": "hi, who are you?",
-    "model": "llama3.2:latest",
-    "is_streaming": true
+    "message": "Write me a joke about cats"
 }'
-```
-
-Ex. output:
-
-```sh
-StateSnapshot(values={}, next=(), config={'configurable': {'thread_id': '1'}}, metadata=None, created_at=None, parent_config=None, tasks=(), interrupts=())
-I|'m| an| AI| chat|bot|,| also| known| as| a| convers|ational| AI| or| natural| language| processing| (|N|LP|)| model|.| I| don|'t| have| personal| experiences|,| emotions|,| or| consciousness| like| humans| do|,| but| I|'m| designed| to| simulate| conversation| and| answer| questions| to| the| best| of| my| ability|.
-
-|My| name| isn|'t| really| a| "|name|"| in| the| classical| sense|,| but| I|'m| often| referred| to| as| "|Assistant|"| or| "|Bot|"| by| users| like| you|.| I| exist| solely| to| provide| information|,| answer| questions|,| and| engage| in| discussions| on| a| wide| range| of| topics|.
-
-|I|'ve| been| trained| on| vast| amounts| of| text| data|,| which| allows| me| to| generate| human|-like| responses| to| a| broad| range| of| queries|.| However|,| my| knowledge| cutoff| is| December| |202|3|,| so| if| you| ask| me| about| very| recent| events| or| developments|,| I| might| not| have| the| most| up|-to|-date| information|.
-
-|Feel| free| to| ask| me| anything|,| and| I|'ll| do| my| best| to| provide| a| helpful| response|!|
 ```
 
 ## Contributing

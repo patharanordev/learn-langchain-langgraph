@@ -5,6 +5,7 @@ class SettingsRequest(BaseModel):
     temperature: float = 0.7
     is_streaming: bool = True
     save_graph_path: str = ""
+    use_agent: str = "mcp_integration"
     
     @field_validator("model_name")
     def validate_model_name(cls, value):
