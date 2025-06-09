@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from models.chat_request import ChatRequest
 from models.settings_request import SettingsRequest
 from workflows.mcp_integration.builder import build_graph as build_graph_mcp
+from workflows.evaluator_optimizer.builder import build_graph as build_graph_optimizer
 from workflows.routing.builder import build_graph as build_graph_routing
 import asyncio
 
@@ -95,7 +96,9 @@ async def stream_graph_updates(thread_id: str, request: ChatRequest):
 @router.post("/setting/{thread_id}")
 async def update_setting(request: SettingsRequest, thread_id:str):
     try:
-        if request.use_agent == "routing":
+        if request.use_agent == "optimizer":
+            graph = await build_graph_optimizer(request)
+        elif request.use_agent == "routing":
             graph = await build_graph_routing(request)
         else:
             graph = await build_graph_mcp(request)

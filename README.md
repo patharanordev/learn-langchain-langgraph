@@ -4,6 +4,7 @@ Ref. https://langchain-ai.github.io/langgraph/tutorials/
 
 ## Patterns
 
+- [x] Evaluator & Optimizer
 - [x] Routing
 - [x] MCP Integration
 

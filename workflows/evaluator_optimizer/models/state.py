@@ -1,6 +1,7 @@
-from typing import TypedDict
+from typing import Any, TypedDict
 
 class State(TypedDict):
+    messages: Any
     joke: str
     topic: str
     feedback: str

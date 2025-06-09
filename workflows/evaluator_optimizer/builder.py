@@ -1,65 +1,71 @@
 from langgraph.graph import StateGraph, START, END
 
-from llms.ollama import OllamaChain
 from workflows.evaluator_optimizer.models.feedback import Feedback
 from workflows.evaluator_optimizer.models.state import State
 
-llm = OllamaChain(temperature=0).llm
-evaluator = OllamaChain(temperature=0, structured=Feedback).llm
+from llms.llm import LLM
+from models.llm_settings import LLMSettings
+from models.settings_request import SettingsRequest
+from langgraph.checkpoint.memory import InMemorySaver
 
-def llm_call_generator(state:State):
-    """LLM generates a joke"""
+from workflows.evaluator_optimizer.nodes.evaluator_node import EvaluatorNode
+from workflows.evaluator_optimizer.nodes.generator_node import GeneratorNode
+from workflows.evaluator_optimizer.nodes.route_joke_node import RouteJokeNode
 
-    if state.get('feedback'):
-        msg = llm.invoke(
-            f"Write a joke about {state['topic']} but take into account the feedback: {state['feedback']}"
+from dotenv import load_dotenv
+import traceback
+
+# load environment variables
+load_dotenv()
+
+async def build_graph(request: SettingsRequest):
+    try:
+        
+        llm_settings = LLMSettings()
+        llm_settings.model_name = request.model_name
+        llm_settings.temperature = request.temperature
+        llm_settings.streaming = request.is_streaming
+        
+        llm = LLM()
+        chain_generator = llm.create_chain(llm_settings)
+
+        llm_settings.structured = Feedback
+        chain_evaluator = llm.create_chain(llm_settings)
+
+        evaluator = EvaluatorNode(chain_evaluator)
+        generator = GeneratorNode(chain_generator)
+        route_joke = RouteJokeNode()
+
+        # Build
+        builder = StateGraph(State)
+
+        # Add nodes
+        builder.add_node("llm_call_generator", generator.node)
+        builder.add_node("llm_call_evaluator", evaluator.node)
+
+        # Add edges
+        builder.add_edge(START, "llm_call_generator")
+        builder.add_edge("llm_call_generator", "llm_call_evaluator")
+        builder.add_conditional_edges(
+            "llm_call_evaluator",
+            route_joke.node,
+            {
+                "Accepted": END,
+                "Rejected + Feedback": "llm_call_evaluator"
+            }
         )
-    else:
-        msg = llm.invoke(f"Write a joke about {state['topic']}")
 
-    return {"joke":msg.content}
+        # To support specific thread for get state from graph
+        memory = InMemorySaver()
+        graph = builder.compile(checkpointer=memory)
 
-def llm_call_evaluator(state: State):
-    """LLM evaluates the joke"""
+        # Show the workflow
+        img_data = graph.get_graph().draw_mermaid_png()
+        with open('./output/graph-evaluator-optimizer.png', 'wb') as f:
+            f.write(img_data)
+            print("Graph image saved successfully!")
 
-    print('------------ llm_call_evaluator ------------')
-    grade = evaluator.invoke(f"Grade the joke {state['joke']}")
-    print(grade)
-    return {
-        "funny_or_not": grade.grade,
-        "feedback": grade.feedback
-    }
-
-def route_joke(state: State):
-    """Route back to joke generator or end based upon feedback from the evaluator"""
-
-    if state["funny_or_not"] == "funny":
-        return "Accepted"
-    elif state["funny_or_not"] == "not funny":
-        return "Rejected + Feedback"
-
-# Build
-optimizer_builder = StateGraph(State)
-
-# Add nodes
-optimizer_builder.add_node("llm_call_generator", llm_call_generator)
-optimizer_builder.add_node("llm_call_evaluator", llm_call_evaluator)
-
-# Add edges
-optimizer_builder.add_edge(START, "llm_call_generator")
-optimizer_builder.add_edge("llm_call_generator", "llm_call_evaluator")
-optimizer_builder.add_conditional_edges(
-    "llm_call_evaluator",
-    route_joke,
-    {
-        "Accepted": END,
-        "Rejected + Feedback": "llm_call_evaluator"
-    }
-)
-
-graph = optimizer_builder.compile()
-
-img_data = graph.get_graph().draw_mermaid_png()
-with open('./output/graph-evaluator-optimizer.png', 'wb') as f:
-    f.write(img_data)
-    print("Graph image saved successfully!")
+        return graph
+    except Exception as e:
+        print(f'In build graph error: {traceback.format_exc()}')
+        raise e

@@ -5,4 +5,3 @@ class State(TypedDict):
     messages: Any
     input: str
     decision: str
-    output: str

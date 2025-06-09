@@ -9,7 +9,9 @@ import traceback
 
 from workflows.mcp_integration.models.state import State
 from workflows.routing.models.route import Route
-from workflows.routing.nodes.llm_route_node import LlmRouteNode
+from workflows.routing.nodes.general_node import GeneralNode
+from workflows.routing.nodes.route_decision_node import RouteDecisionNode
+from workflows.routing.nodes.routing_node import RouterNode
 
 # load environment variables
 load_dotenv()
@@ -28,19 +30,21 @@ async def build_graph(request: SettingsRequest):
         llm_settings.structured = Route
         chain_route = llm.create_chain(llm_settings)
 
-        llm_route_node = LlmRouteNode(chain_general, chain_route)
+        general = GeneralNode(chain_general)
+        router = RouterNode(chain_route)
+        route_decision = RouteDecisionNode()
         
         builder = StateGraph(State)
-        builder.add_node("llm_call_router", llm_route_node.llm_call_router)
-        builder.add_node('llm_call_1', llm_route_node.llm_call_1)
-        builder.add_node("llm_call_2", llm_route_node.llm_call_2)
-        builder.add_node("llm_call_3", llm_route_node.llm_call_3)
+        builder.add_node("llm_call_router", router.node)
+        builder.add_node('llm_call_1', general.llm_call_1)
+        builder.add_node("llm_call_2", general.llm_call_2)
+        builder.add_node("llm_call_3", general.llm_call_3)
         
         # Add edges to connect nodes
         builder.add_edge(START, "llm_call_router")
         builder.add_conditional_edges(
             "llm_call_router",
-            llm_route_node.route_decision,
+            route_decision.node,
             {  # Name returned by route_decision : Name of next node to visit
                 "llm_call_1": "llm_call_1",
                 "llm_call_2": "llm_call_2",
