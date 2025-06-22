@@ -7,7 +7,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from dotenv import load_dotenv
 import traceback
 
-from workflows.mcp_integration.models.state import State
+from workflows.routing.models.state import State
 from workflows.routing.models.route import Route
 from workflows.routing.nodes.general_node import GeneralNode
 from workflows.routing.nodes.route_decision_node import RouteDecisionNode
@@ -19,10 +19,7 @@ load_dotenv()
 async def build_graph(request: SettingsRequest):
     try:
         
-        llm_settings = LLMSettings()
-        llm_settings.model_name = request.model_name
-        llm_settings.temperature = request.temperature
-        llm_settings.streaming = request.is_streaming
+        llm_settings = LLMSettings(**request.model_dump())
         
         llm = LLM()
         chain_general = llm.create_chain(llm_settings)
@@ -30,8 +27,8 @@ async def build_graph(request: SettingsRequest):
         llm_settings.structured = Route
         chain_route = llm.create_chain(llm_settings)
 
-        general = GeneralNode(chain_general)
         router = RouterNode(chain_route)
+        general = GeneralNode(chain_general)
         route_decision = RouteDecisionNode()
         
         builder = StateGraph(State)

@@ -1,9 +1,10 @@
 from pydantic import BaseModel, field_validator
 
 class SettingsRequest(BaseModel):
+    base_url:str = 'http://localhost:11434'
     model_name: str = "anthropic.claude-3-sonnet-20240229-v1:0"
     temperature: float = 0.7
-    is_streaming: bool = True
+    streaming: bool = True
     save_graph_path: str = ""
     use_agent: str = "mcp_integration"
     

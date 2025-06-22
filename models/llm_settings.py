@@ -6,6 +6,7 @@ from pydantic import BaseModel
 T = TypeVar('T', bound=BaseModel)
 
 class LLMSettings(BaseModel):
+    base_url:str = 'http://localhost:11434'
     model_name:str=''
     temperature:float=0.7
     chain_response_type:ChainResponseType=ChainResponseType.DEFAULT

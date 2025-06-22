@@ -2,9 +2,11 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, JSONResponse
 from models.chat_request import ChatRequest
 from models.settings_request import SettingsRequest
+from retrievers.retriever_provider import RetrieverProvider
 from workflows.mcp_integration.builder import build_graph as build_graph_mcp
 from workflows.evaluator_optimizer.builder import build_graph as build_graph_optimizer
 from workflows.routing.builder import build_graph as build_graph_routing
+from workflows.rag.adaptive.builder import build_graph as build_graph_adaptive_rag
 import asyncio
 
 graph_cache = {
@@ -100,6 +102,8 @@ async def update_setting(request: SettingsRequest, thread_id:str):
             graph = await build_graph_optimizer(request)
         elif request.use_agent == "routing":
             graph = await build_graph_routing(request)
+        elif request.use_agent == "adaptive_rag":
+            graph = await build_graph_adaptive_rag(request)
         else:
             graph = await build_graph_mcp(request)
 
@@ -130,7 +134,7 @@ async def chat(request: ChatRequest, thread_id:str):
 
     # check setting of user's graph
     setting: SettingsRequest = graph_cache[thread_id].get("settings")
-    if setting.is_streaming:
+    if setting.streaming:
         return StreamingResponse(
             stream_graph_updates(thread_id, request),
             media_type="text/event-stream"
@@ -140,3 +144,4 @@ async def chat(request: ChatRequest, thread_id:str):
         return JSONResponse(
             content={ "data": content },
         )
+    

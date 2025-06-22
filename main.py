@@ -10,7 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # from workflows.sql.postgres.handler import OllamaPostgreSQLAgent
 # from workflows.mcp_integration.handler import start_mcp_integration
 
-from routers import chat, system
+# from huggingface_hub.commands.user import login
+# from config.settings import settings
+
+from retrievers.retriever import connect_retriever
+from routers import chat, system, document
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,6 +42,7 @@ def create_app() -> FastAPI:
     
     app = FastAPI(lifespan=lifespan)
     app.include_router(chat.router)
+    app.include_router(document.router)
     app.include_router(system.router)
     app.add_middleware(
         CORSMiddleware,
@@ -49,6 +54,9 @@ def create_app() -> FastAPI:
 
     app.add_event_handler("startup", lambda: print("Application started"))
     app.add_event_handler("shutdown", lambda: print("Application stopped"))
+
+    # initial retriever
+    connect_retriever()
 
     return app
 

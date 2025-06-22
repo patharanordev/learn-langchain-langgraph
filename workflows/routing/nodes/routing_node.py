@@ -24,5 +24,6 @@ class RouterNode:
 
         return {
             "input": input_content,
-            "decision": decision.step
+            "decision": decision.step,
+            **state
         }

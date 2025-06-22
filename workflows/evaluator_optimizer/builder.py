@@ -21,10 +21,7 @@ load_dotenv()
 async def build_graph(request: SettingsRequest):
     try:
         
-        llm_settings = LLMSettings()
-        llm_settings.model_name = request.model_name
-        llm_settings.temperature = request.temperature
-        llm_settings.streaming = request.is_streaming
+        llm_settings = LLMSettings(**request.model_dump())
         
         llm = LLM()
         chain_generator = llm.create_chain(llm_settings)

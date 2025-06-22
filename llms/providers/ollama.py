@@ -21,7 +21,7 @@ class OllamaChain(LLMProvider):
         self.update_settings(settings)
 
         self.model = ChatOllama(
-            base_url='http://localhost:11434',
+            base_url=settings.base_url,
             model=settings.model_name, 
             temperature=settings.temperature,
             streaming=settings.streaming,
