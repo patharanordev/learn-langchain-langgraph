@@ -38,3 +38,28 @@ Use the vectorstore for questions on these topics. Otherwise, use web-search."""
             "question": state["messages"][-1]["content"],
             "datasource": result.datasource
         }
+    
+    def route_question(self, state:State):
+        """
+        Route question to web search or RAG.
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            str: Next node to call
+        """
+
+        print("---ROUTE QUESTION---")
+        question = state["messages"][-1]["content"]
+        source = self.llm.invoke({"question": question})
+        result = ""
+        if source.datasource == "web_search":
+            print("---ROUTE QUESTION TO WEB SEARCH---")
+            result = "web_search"
+        elif source.datasource == "vectorstore":
+            print("---ROUTE QUESTION TO RAG---")
+            result = "vectorstore"
+
+        print(f"result: {result}\n")
+        return result

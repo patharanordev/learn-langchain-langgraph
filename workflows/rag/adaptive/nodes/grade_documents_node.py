@@ -23,31 +23,59 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
         self.retriever_provider = retriever_provider
 
     def node(self, state:State):
-        print('\n------------ GradeDocumentsNode ------------\n')
-        print(state)
+        """
+        Determines whether the retrieved documents are relevant to the question.
 
-        if self.retriever_provider.retriever is None:
-            return state
+        Args:
+            state (dict): The current graph state
 
-        docs = self.retriever_provider.retriever.invoke(state["question"])
-        doc_txt = docs[1].page_content
+        Returns:
+            state (dict): Updates documents key with only filtered relevant documents
+        """
 
-        print('\nDocument:\n')
-        print(doc_txt)
+        print("---CHECK DOCUMENT RELEVANCE TO QUESTION---")
+        question = state["question"]
+        documents = state["documents"]
 
-        result:GradeDocuments = self.llm.invoke(
-            {"question": state["question"], "document": doc_txt}
-        )
+        # Score each doc
+        filtered_docs = []
+        for d in documents:
+            score:GradeDocuments = self.llm.invoke(
+                {"question": state["question"], "document": d.page_content}
+            )
 
-        print('\nResult:\n')
-        print(result)
-
-        state["messages"].append({
-            "content": result.binary_score
-        })
-        
-        return {
-            "binary_score": result.binary_score,
-            **state
-        }
+            grade = score.binary_score
+            if grade == "yes":
+                print("---GRADE: DOCUMENT RELEVANT---")
+                filtered_docs.append(d)
+            else:
+                print("---GRADE: DOCUMENT NOT RELEVANT---")
+                
+        return {"documents": filtered_docs, "question": question}
     
+    
+    def decide_to_generate(self, state:State):
+        """
+        Determines whether to generate an answer, or re-generate a question.
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            str: Binary decision for next node to call
+        """
+
+        print("---ASSESS GRADED DOCUMENTS---")
+        filtered_documents = state["documents"]
+
+        if not filtered_documents:
+            # All documents have been filtered check_relevance
+            # We will re-generate a new query
+            print(
+                "---DECISION: ALL DOCUMENTS ARE NOT RELEVANT TO QUESTION, TRANSFORM QUERY---"
+            )
+            return "transform_query"
+        else:
+            # We have relevant documents, so generate answer
+            print("---DECISION: GENERATE---")
+            return "generate"
