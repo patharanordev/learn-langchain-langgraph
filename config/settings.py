@@ -16,6 +16,7 @@ class Settings(BaseSettings):
   langsmith_endpoint: str = "https://api.smith.langchain.com"
   langsmith_api_key: str = ""
   langsmith_project: str = ""
+  tavily_api_key: str = ""
   aws_bedrock_region: str = "us-east-1"
   aws_bedrock_access_key: str = ""
   aws_bedrock_secret_key: str = ""
