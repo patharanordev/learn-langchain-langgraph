@@ -10,6 +10,7 @@ services:
       - ./.env
     volumes:
       - ./.cache/huggingface:/.cache/huggingface
+      - ./output:/app/output
     networks:
       - ecosystem_commonnet
     restart: unless-stopped

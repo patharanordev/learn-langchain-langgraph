@@ -79,6 +79,18 @@ async def stream_graph_updates(thread_id: str, request: ChatRequest):
         config,
         stream_mode='messages'
     ):
+        # # --------------------------
+        # # node filtering
+        # target_nodes = []
+
+        # try:
+        #     if metadata["checkpoint_ns"].split(":")[0] not in target_nodes:
+        #         continue
+        # except Exception:
+        #     if metadata["langgraph_node"] not in target_nodes:
+        #         continue
+        # # --------------------------
+
         if message_chunk.content:
             print(message_chunk.content, end="|", flush=True)
             buffer.append(transform_message(message_chunk.content))
