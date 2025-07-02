@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 #   }
 
   # retriever
-  retriever_provider_name: str = "chroma"
+  retriever_provider_name: str = ""
 
   # chromadb
   chroma_top_k: int = 3

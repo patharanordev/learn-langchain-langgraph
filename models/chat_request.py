@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, field_validator
 
 class ChatRequest(BaseModel):
@@ -5,6 +6,8 @@ class ChatRequest(BaseModel):
     Represents a request to the OpenAI Chat API.
     """
     message: str
+    run_id: Optional[str] = None
+    decision: Optional[str] = None
     
     @field_validator("message")
     def validate_num_tokens(cls, value):

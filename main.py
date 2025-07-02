@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from retrievers.retriever import connect_retriever
 from routers import chat, system, document
+from config.settings import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,7 +57,8 @@ def create_app() -> FastAPI:
     app.add_event_handler("shutdown", lambda: print("Application stopped"))
 
     # initial retriever
-    connect_retriever()
+    if settings.retriever_provider_name != "":
+        connect_retriever()
 
     return app
 
