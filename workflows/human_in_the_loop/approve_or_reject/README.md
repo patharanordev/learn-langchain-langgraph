@@ -1,4 +1,4 @@
-## Human Approval — Approve / Reject
+## **Human Approval — Approve / Reject**
 
 > Ref. https://langchain-ai.github.io/langgraph/how-tos/human_in_the_loop/add-human-in-the-loop/#approve-or-reject
 
@@ -6,11 +6,194 @@
 
 Pause the graph before a critical step, such as an API call, to review and approve the action. If the action is rejected, ***you can prevent the graph from executing the step, and potentially take an alternative action***. This pattern often involves routing the graph based on the human's input.
 
-## Usage
+### **Usage**
 
-Coming soon...
+Assume LLM generated `AIMessage`, in this example you can sending any `HumanMessage`:
 
-Example output log:
+```sh
+curl --location 'http://localhost:8000/chat/1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "message": ""
+}'
+```
+
+> ---
+> **NOTE**: In this case `AIMessage` from previous node is in `state["llm_output"]`. Next then approval node should look like this:
+>
+> ```py
+> def node(self, state:State, config:RunnableConfig) -> Command[Literal["approved_path", "rejected_path"]]:
+>   print("--------- HumanApprovalNode ---------")
+>   pprint(state)  
+>  
+>   human = interru  pt({
+>       "question":   "Do you approve the following output?",
+>       "llm_output  ": state["llm_output"].content,
+>       "run_id": config.get('configurable').get('run_id')
+>   })
+>
+>   decision = human.get("interrupt_response")
+>   state["messages"].append(HumanMessage(content=f"Human approval: {decision}"))
+>  
+>   if decision == "approve":
+>       return Command(goto="approved_path", update={"decision":"approved"})
+>   else:
+>       return Command(goto="rejected_path", update={"decision":"rejected"})
+>  
+> ```
+
+The `interrupt()` function, pause the flow to get feedback from user, ex. output:
+
+```sh
+data: This is the generated output.
+
+data: {'question': 'Do you approve the following output?', 'llm_output': 'This is the generated output.', 'run_id': '76842d88-75ca-4b8a-892e-cbb1a7a942f0'}
+```
+
+This time client saw question from AI with `run_id` (or any ID bbased on your setup), your feedback message must attached `run_id` into payload to resume the flow:
+
+```sh
+curl --location 'http://localhost:8000/chat/1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "run_id": "76842d88-75ca-4b8a-892e-cbb1a7a942f0",
+    "message": "approve"
+}'
+```
+
+After user feedback with `run_id`, it will resume to the flow at this code statment:
+
+```py
+human = interrupt({ ... })
+  ^
+  |___ here
+
+decision = human.get("interrupt_response")
+```
+
+Ex. output result at final node:
+
+```sh
+data: Human approval: approve
+```
+
+### **Information**
+
+Resume function requires:
+
+- `run_id` or any name that you set.
+- `interrupt_response` this attribute same result as :
+
+    ```py
+    state['messages'].append(LATEST_MSG_FROM_USER).
+    ```
+
+- `question` or any attribute name thhat you want to receive feedback from user.
+- `astream` or `stream` of graph object should provides 2-modes, ex:
+
+    ```py
+    # >>> manage graph's config and threads <<<
+    async for chunk in graph.astream(
+        user_input,
+        config,
+        stream_mode=["messages", "updates"]
+    ):
+        mode, data = chunk
+
+        if mode == "messages":
+            message_chunk, metadata = data
+
+            # >>> process the chunk messages <<<
+
+            yield send_message(message)
+            await asyncio.sleep(0.01)
+
+        elif mode == "updates":
+            interrupt = data.get("__interrupt__")
+            if interrupt:
+                interrupt, = interrupt
+
+                # >>> process the interrupt <<<
+
+                yield send_message(interrupt.value)
+                await asyncio.sleep(0.01)
+    ```
+
+    Ex. stream frunction should look like this:
+
+    ```py
+    def send_message(message: str):
+        return f"data: {message}\n\n"
+        
+    async def stream_graph_updates(thread_id: str, request: ChatRequest):
+
+        config = {
+            'configurable': {
+                'thread_id': thread_id,
+                'run_id': str(uuid.uuid4())
+            }
+        }
+
+        graph = graph_cache[thread_id].get("graph")
+        snapshot = graph.get_state(config)
+        snapshot.next
+        
+        if request.run_id:
+            user_input = Command(
+                resume={
+                    "interrupt_response": request.message,
+                    "question": "Do you approve the following output?",
+                    "run_id": request.run_id
+                }
+            )
+        else:
+            user_input = {"messages": [HumanMessage(content=request.message)]}
+
+        # reduce workload when streaming
+        buffer = []
+        
+        async for chunk in graph.astream(
+            user_input,
+            config,
+            stream_mode=["messages", "updates"]
+        ):
+
+            mode, data = chunk
+
+            if mode == "messages":
+                message_chunk, metadata = data
+                content = message_chunk.content if hasattr(message_chunk, "content") else message_chunk
+                print(content, end="|", flush=True)
+                buffer.append(transform_message(content))
+                
+                if len(buffer) >= STREAM_TOKEN_BUFFER_SIZE:
+                    message = "".join(buffer).strip()
+                    buffer.clear()
+                    yield send_message(message)
+                    await asyncio.sleep(0.01)
+            elif mode == "updates":
+                pprint(data)
+
+                interrupt = data.get("__interrupt__")
+                if interrupt:
+                    interrupt, = interrupt
+                    if len(buffer) > 0:
+                        message = "".join(buffer).strip()
+                        buffer.clear()
+                        yield send_message(message)
+                        await asyncio.sleep(0.01)
+
+                    yield send_message(interrupt.value)
+                    await asyncio.sleep(0.01)
+
+        if len(buffer) > 0:
+            message = "".join(buffer).strip()
+            buffer.clear()
+            yield send_message(message)
+            await asyncio.sleep(0.01)
+    ```
+
+#### Example output log
 
 ```sh
 learn_langchain_langgraph  | StateSnapshot(values={}, next=(), config={'configurable': {'thread_id': '1', 'run_id': 'ffb50095-2f9f-48e2-9e99-2b78a9ae8092'}}, metadata=None, created_at=None, parent_config=None, tasks=(), interrupts=())
