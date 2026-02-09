@@ -1,6 +1,7 @@
 # Learn LangChain & LangGraph
 
-Ref. https://langchain-ai.github.io/langgraph/tutorials/
+- [x] Old-revision (Ref. https://langchain-ai.github.io/langgraph/tutorials/)
+- [ ] New-revision with DeepAgent
 
 ## Patterns
 
