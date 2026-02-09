@@ -1,0 +1,21 @@
+services:
+  learn_langchain_langgraph:
+    container_name: learn_langchain_langgraph
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    volumes:
+      - ./.cache/huggingface:/.cache/huggingface
+      - ./output:/app/output
+    networks:
+      - ecosystem_commonnet
+    restart: unless-stopped
+
+networks:
+  ecosystem_commonnet:
+    name: commonnet
+    external: true

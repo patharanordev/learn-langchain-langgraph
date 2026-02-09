@@ -22,6 +22,7 @@ class OllamaChain:
         chain_response_type:ChainResponseType=ChainResponseType.DEFAULT,
         is_chat_template:bool=True, 
         structured:Union[T, None]=None, 
+        streaming=False,
         tools:list=[],
         prompt:Union[PromptTemplate, None]=None, 
     ):
@@ -33,7 +34,8 @@ class OllamaChain:
         self.model = ChatOllama(
             base_url='http://localhost:11434',
             model=model, 
-            temperature=temperature
+            temperature=temperature,
+            streaming=streaming,
         )
         
         if len(tools) > 0:

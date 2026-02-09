@@ -1,0 +1,21 @@
+from typing import Optional
+from pydantic import BaseModel, field_validator
+
+class ChatRequest(BaseModel):
+    """
+    Represents a request to the OpenAI Chat API.
+    """
+    message: str
+    run_id: Optional[str] = None
+    decision: Optional[str] = None
+    
+    @field_validator("message")
+    def validate_num_tokens(cls, value):
+
+        # TODO: Implement token limit check
+        # token_size = len(value.split())
+        # if value > config.token_limit:
+        # raise ValueError(
+        #     f"Your message too long. We allow {token_limit} tokens, got {token_size}.")
+
+        return value

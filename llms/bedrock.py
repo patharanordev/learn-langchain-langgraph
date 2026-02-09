@@ -23,6 +23,7 @@ class BedrockChain:
         chain_response_type:ChainResponseType=ChainResponseType.DEFAULT,
         is_chat_template:bool=True, 
         structured:Union[T, None]=None, 
+        streaming=False,
         tools:list=[],
         prompt:Union[PromptTemplate, None]=None
     ):
@@ -41,6 +42,7 @@ class BedrockChain:
             region_name=os.environ.get('AWS_BEDROCK_REGION'),
             aws_access_key_id=os.environ.get('AWS_BEDROCK_ACCESS_KEY'),
             aws_secret_access_key=os.environ.get('AWS_BEDROCK_SECRET_KEY'),
+            disable_streaming=not streaming,
         )
 
         if len(tools) > 0:

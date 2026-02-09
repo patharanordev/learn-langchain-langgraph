@@ -2,9 +2,15 @@
 
 Ref. https://langchain-ai.github.io/langgraph/tutorials/
 
+## Patterns
 
+- [x] Evaluator & Optimizer
+- [x] Routing
+- [x] MCP Integration
 
 ## Prerequisites
+
+Coming soon...
 
 ### Environment Variables
 
@@ -86,6 +92,15 @@ pip install -r requirements.txt
 
 ### Run
 
+> ---
+> Don't forget start `ollama` if you no have any LLM providers:
+>
+> ```sh
+> ollama serve
+> ```
+>
+> ---
+
 Active some workflow in `main.py`, then try:
 
 ```sh
@@ -95,3 +110,56 @@ uv run main.py
 # WindowsOS
 python main.py
 ```
+
+Started:
+
+```sh
+INFO:     Started server process [22576]
+INFO:     Waiting for application startup.
+Starting up...
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:58164 - "POST /chat/1 HTTP/1.1" 200 OK
+```
+
+### Streaming
+
+Set setting first to config model and parameters:
+
+```sh
+curl --location 'http://localhost:8000/chat/setting/1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model_name": "llama3.2:latest",
+    "temperature": 0.7,
+    "is_streaming": true,
+    "use_agent": "routing", 
+    "save_graph_path": "./output/graph-routing.png"
+}'
+```
+
+Then let's chat:
+
+```sh
+curl --location 'http://localhost:8000/chat/1' \
+--header 'Content-Type: application/json' \
+--data '{
+    "message": "Write me a joke about cats"
+}'
+```
+
+## Contributing
+
+- Add graph/workflow of your agent in `workflows` directory.
+- Add more model's attribute in `LLMSettings`.
+- Create chain (of any model) via LLM().create_chain(LLMSettings). Please refer to `workflows/mcp_integration/builder.py`.
+- Add more LLM provider and their models in :
+  - Model names of each provider - `llms/model_names.py`.
+  - LLM provider's name - `llms/llm_provider_name.py`.
+  - LLM provider - `llms/providers/{provider_name}.py` to custom function or method.
+- Create graph when user update `LLMSettings` via endpoint name `/chat/setting/{thread_id}`. The graph will be add into cache or database (currently is in-memory).
+- Graph used via endpoint name `/chat/{thread_id}`.
+
+## References
+
+- [Streaming in LangGraph](./docs/streaming.md)
